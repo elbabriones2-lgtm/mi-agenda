@@ -118,6 +118,13 @@ function initLogin() {
     return;
   }
 
+  // Check URL param for reset
+  if (window.location.search.includes('resetpin=1')) {
+    localStorage.removeItem('agenda_pin');
+    sessionStorage.removeItem('agenda_session');
+    showToast('PIN reiniciado. Creá uno nuevo.', 'ok');
+  }
+
   const storedPin = getStoredPin();
   const isFirstTime = !storedPin;
 
@@ -133,6 +140,24 @@ function initLogin() {
   app.classList.add('hidden');
   passInput.value = '';
   passInput.focus();
+
+  // Agregar botón de "Olvidé mi código" si no existe
+  let resetBtn = document.getElementById('btn-reset-pin');
+  if (!resetBtn) {
+    resetBtn = document.createElement('button');
+    resetBtn.id = 'btn-reset-pin';
+    resetBtn.textContent = '¿Olvidaste tu código?';
+    resetBtn.style.cssText = 'background:none;border:none;color:var(--primary);font-size:0.85rem;margin-top:12px;cursor:pointer;text-decoration:underline;';
+    resetBtn.onclick = () => {
+      if (confirm('¿Seguro que querés borrar el código y crear uno nuevo?')) {
+        localStorage.removeItem('agenda_pin');
+        sessionStorage.removeItem('agenda_session');
+        location.reload();
+      }
+    };
+    loginBtn.parentNode.insertBefore(resetBtn, loginBtn.nextSibling);
+  }
+  resetBtn.style.display = isFirstTime ? 'none' : 'inline-block';
 
   loginBtn.onclick = () => {
     const pin = passInput.value.trim();
