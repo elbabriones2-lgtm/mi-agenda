@@ -1,5 +1,5 @@
 /* ============================================================
-   Mi Agenda — Gestión de Visitas Médicas v2.6
+   Mi Agenda — Gestión de Visitas Médicas v2.7
    Features: GPS | Horario sugerido | IA redacción | Mapa | Waze
              Estadísticas | Export Excel | 🔒 PIN de acceso
    ============================================================ */
@@ -76,6 +76,8 @@ function seedDemo() {
 }
 
 // ===== PIN SYSTEM =====
+const PIN_DEFAULT = '2288';
+
 function getStoredPin() {
   return localStorage.getItem('agenda_pin');
 }
@@ -125,16 +127,18 @@ function initLogin() {
     showToast('PIN reiniciado. Creá uno nuevo.', 'ok');
   }
 
-  const storedPin = getStoredPin();
-  const isFirstTime = !storedPin;
+  let storedPin = getStoredPin();
+  let isFirstTime = !storedPin;
 
+  // Si es la primera vez, establecer PIN por defecto 2288
   if (isFirstTime) {
-    title.textContent = 'Crear código de acceso';
-    subtitle.textContent = 'Elegí un código para proteger tu agenda';
-  } else {
-    title.textContent = 'Acceso protegido';
-    subtitle.textContent = 'Ingresá el código de acceso';
+    setPin(PIN_DEFAULT);
+    storedPin = PIN_DEFAULT;
+    isFirstTime = false;
   }
+
+  title.textContent = 'Acceso protegido';
+  subtitle.textContent = 'Ingresá el código de acceso';
 
   overlay.classList.remove('hidden');
   app.classList.add('hidden');
@@ -157,7 +161,7 @@ function initLogin() {
     };
     loginBtn.parentNode.insertBefore(resetBtn, loginBtn.nextSibling);
   }
-  resetBtn.style.display = isFirstTime ? 'none' : 'inline-block';
+  resetBtn.style.display = 'inline-block';
 
   loginBtn.onclick = () => {
     const pin = passInput.value.trim();
@@ -167,29 +171,18 @@ function initLogin() {
       return;
     }
 
-    if (isFirstTime) {
-      // Crear PIN nuevo
-      setPin(pin);
+    // Verificar PIN
+    if (pin === storedPin) {
       activateSession();
       overlay.classList.add('hidden');
       app.classList.remove('hidden');
       errorEl.classList.add('hidden');
       initApp();
-      showToast('🔒 Código creado. Bienvenido.', 'ok');
     } else {
-      // Verificar PIN
-      if (pin === storedPin) {
-        activateSession();
-        overlay.classList.add('hidden');
-        app.classList.remove('hidden');
-        errorEl.classList.add('hidden');
-        initApp();
-      } else {
-        errorEl.textContent = 'Código incorrecto';
-        errorEl.classList.remove('hidden');
-        passInput.value = '';
-        passInput.focus();
-      }
+      errorEl.textContent = 'Código incorrecto';
+      errorEl.classList.remove('hidden');
+      passInput.value = '';
+      passInput.focus();
     }
   };
 
@@ -327,7 +320,6 @@ $('#btn-cerrar-sesion').addEventListener('click', (e) => {
   $('#main-nav').classList.add('hidden');
   $('#nav-overlay').classList.add('hidden');
   showToast('Sesión cerrada. Ingresá el código para volver.', 'ok');
-  // Re-inicializar login
   setTimeout(initLogin, 300);
 });
 

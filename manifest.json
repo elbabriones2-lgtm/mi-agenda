@@ -1,13 +1,13 @@
 {
   "name": "Mi Agenda",
   "short_name": "Agenda",
-  "start_url": ".",
+  "start_url": "/mi-agenda/",
   "display": "standalone",
   "background_color": "#f0f4f8",
   "theme_color": "#0d7377",
   "icons": [
     {
-      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect fill='%230d7377' width='192' height='192' rx='32'/%3E%3Ctext x='96' y='120' font-size='80' text-anchor='middle' fill='white'%3E\ud83d\udcc5%3C/text%3E%3C/svg%3E",
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect fill='%230d7377' width='192' height='192' rx='32'/%3E%3Ctext x='96' y='120' font-size='80' text-anchor='middle' fill='white'%3E%F0%9F%93%85%3C/text%3E%3C/svg%3E",
       "sizes": "192x192",
       "type": "image/svg+xml"
     }
