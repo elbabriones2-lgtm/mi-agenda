@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0d7377">
+<title>Mi Agenda</title>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<!-- LOGIN OVERLAY -->
+<div id="login-overlay">
+  <div class="login-box">
+    <div class="login-logo">🏥 INFASA</div>
+    <h2 id="login-title">Bloqueo de seguridad</h2>
+    <p id="login-subtitle">Esta app está protegida con encriptación</p>
+    <input type="password" id="login-pass" placeholder="Contraseña" autocomplete="off">
+    <input type="password" id="login-pass-confirm" placeholder="Confirmar contraseña" class="hidden" autocomplete="off">
+    <div id="login-error" class="login-error hidden"></div>
+    <button id="btn-login" class="btn-primary" style="width:100%;margin-top:12px;">Entrar</button>
+    <p class="login-hint">🔒 Tus datos se encriptan en este dispositivo. Sin esta contraseña nadie puede acceder.</p>
+  </div>
+</div>
+
+<div id="app" class="hidden">
+  <header class="app-header">
+    <div class="logo">📅 Mi Agenda</div>
+    <div class="header-actions">
+      <button id="btn-notif" class="icon-btn" title="Activar notificaciones">🔔</button>
+      <button id="btn-gps" class="icon-btn" title="Mi ubicación">📍</button>
+      <button id="btn-menu" class="icon-btn">☰</button>
+    </div>
+  </header>
+
+  <div id="toast-container"></div>
+
+  <nav id="main-nav" class="hidden">
+    <a href="#" data-section="dashboard" class="nav-link active">📊 Dashboard</a>
+    <a href="#" data-section="medicos" class="nav-link">👨‍⚕️ Médicos</a>
+    <a href="#" data-section="ruta" class="nav-link">🗓️ Mi Ruta Semanal</a>
+    <a href="#" data-section="visita" class="nav-link">📝 Registrar Visita</a>
+    <a href="#" data-section="ruta-optima" class="nav-link">🗺️ Ruta Óptima</a>
+    <a href="#" data-section="mapa" class="nav-link">🗺️ Mapa Zonas</a>
+    <a href="#" data-section="estadisticas" class="nav-link">📈 Estadísticas</a>
+    <a href="#" data-section="exportar" class="nav-link">📥 Exportar</a>
+    <div style="border-top:1px solid var(--border);margin:8px 0;"></div>
+    <a href="#" id="btn-cerrar-sesion" class="nav-link" style="color:var(--danger)">🔒 Cerrar sesión</a>
+  </nav>
+
+  <div id="nav-overlay" class="hidden"></div>
+
+  <main class="main-content">
+
+    <section id="dashboard" class="section active">
+      <h2>📊 Dashboard de Hoy</h2>
+      <div class="card stats-card">
+        <div class="stat"><span class="stat-num" id="dash-total-hoy">0</span><span class="stat-label">Médicos en ruta hoy</span></div>
+        <div class="stat"><span class="stat-num" id="dash-visitados">0</span><span class="stat-label">Visitados</span></div>
+        <div class="stat"><span class="stat-num" id="dash-pendientes">0</span><span class="stat-label">Pendientes</span></div>
+      </div>
+      <div class="card">
+        <h3>📍 Mi ubicación</h3>
+        <div id="dash-mi-ubicacion">Tocá 📍 en el header para ver tu ubicación actual</div>
+      </div>
+      <div id="dash-proximas" class="card">
+        <h3>⏰ Próximas atenciones</h3>
+        <div id="dash-proximas-list">Cargando...</div>
+      </div>
+      <div class="card">
+        <h3>🔔 Recordatorios activos</h3>
+        <div id="dash-recordatorios-list">Sin recordatorios</div>
+      </div>
+    </section>
+
+    <section id="medicos" class="section">
+      <h2>👨‍⚕️ Médicos</h2>
+      <button id="btn-add-medico" class="btn-primary">+ Nuevo Médico</button>
+      <div id="medicos-list" class="list-container"></div>
+    </section>
+
+    <section id="ruta" class="section">
+      <h2>🗓️ Mi Ruta Semanal</h2>
+      <div class="tabs">
+        <button class="tab-btn active" data-day="1">Lun</button>
+        <button class="tab-btn" data-day="2">Mar</button>
+        <button class="tab-btn" data-day="3">Mié</button>
+        <button class="tab-btn" data-day="4">Jue</button>
+        <button class="tab-btn" data-day="5">Vie</button>
+        <button class="tab-btn" data-day="6">Sáb</button>
+      </div>
+      <div id="ruta-dia-content" class="card">
+        <p>Selecciona un médico para agregarlo a la ruta de <strong id="ruta-dia-nombre">Lunes</strong>:</p>
+        <select id="select-medico-ruta"></select>
+        <button id="btn-add-ruta" class="btn-secondary">Agregar a ruta</button>
+        <div id="ruta-dia-list" class="list-container"></div>
+      </div>
+    </section>
+
+    <section id="visita" class="section">
+      <h2>📝 Registrar Visita</h2>
+      <div class="card form-card">
+        <label>Médico:</label><select id="visita-medico"></select>
+        <label>Fecha:</label><input type="date" id="visita-fecha">
+        <label>Hora de cita:</label>
+        <div class="hora-sugerida-row">
+          <input type="time" id="visita-hora">
+          <button id="btn-hora-sugerida" class="btn-outline btn-small">✨ Sugerir horario</button>
+        </div>
+        <div id="hora-sugerida-msg" class="sugerencia-msg"></div>
+        <div id="visita-validacion" class="validation-msg"></div>
+        <label>Observaciones:</label>
+        <textarea id="visita-notas" rows="4" placeholder="Escribí tus notas de la visita..."></textarea>
+        <div class="ia-actions">
+          <button id="btn-pulir-ia" class="btn-ia">✨ Pulir redacción con IA</button>
+          <button id="btn-plantilla-ia" class="btn-ia btn-ia-secondary">📋 Usar plantilla</button>
+        </div>
+        <div id="ia-preview" class="ia-preview hidden"></div>
+        <button id="btn-guardar-visita" class="btn-primary">Guardar Visita</button>
+      </div>
+      <h3>📋 Historial de visitas</h3>
+      <div id="visitas-list" class="list-container"></div>
+    </section>
+
+    <section id="ruta-optima" class="section">
+      <h2>🗺️ Ruta Óptima del Día</h2>
+      <div class="card">
+        <label>Selecciona el día:</label>
+        <select id="opt-dia">
+          <option value="1">Lunes</option><option value="2">Martes</option><option value="3">Miércoles</option>
+          <option value="4">Jueves</option><option value="5">Viernes</option><option value="6">Sábado</option>
+        </select>
+        <label>Criterio de ordenamiento:</label>
+        <select id="opt-criterio">
+          <option value="horario">🕐 Por horario de apertura</option>
+          <option value="proximidad">📍 Por proximidad geográfica</option>
+          <option value="sin-choque">⚡ Sin choque de horarios</option>
+        </select>
+        <button id="btn-calcular-ruta" class="btn-primary">Calcular Ruta Óptima</button>
+      </div>
+      <div id="opt-resultado" class="card hidden">
+        <h3>📍 Ruta sugerida</h3>
+        <div id="opt-ruta-list"></div>
+        <button id="btn-waze-ruta" class="btn-waze">🚗 Abrir primera parada en Waze</button>
+        <div id="opt-mapa" class="mapa-real"></div>
+      </div>
+    </section>
+
+    <section id="mapa" class="section">
+      <h2>🗺️ Mapa de Zonas</h2>
+      <div class="card">
+        <label>Zona:</label>
+        <select id="mapa-zona">
+          <option value="managua">Managua</option>
+          <option value="leon">León</option>
+        </select>
+        <label>Mostrar:</label>
+        <select id="mapa-filtro">
+          <option value="todos">Todos los médicos</option>
+          <option value="ruta-hoy">Solo ruta de hoy</option>
+        </select>
+        <button id="btn-mi-ubi-mapa" class="btn-outline btn-small" style="margin-top:8px;">📍 Centrar en mi ubicación</button>
+      </div>
+      <div id="mapa-container" class="mapa-real"></div>
+      <div class="card">
+        <h3>📍 Leyenda</h3>
+        <div class="leyenda">
+          <span class="leyenda-item"><span class="pin pin-mana"></span> Managua</span>
+          <span class="leyenda-item"><span class="pin pin-leon"></span> León</span>
+          <span class="leyenda-item"><span class="pin pin-ruta"></span> En ruta hoy</span>
+          <span class="leyenda-item"><span class="pin pin-yo"></span> Yo</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="estadisticas" class="section">
+      <h2>📈 Estadísticas de Cobertura</h2>
+      <div class="card stats-card">
+        <div class="stat"><span class="stat-num" id="stat-total-medicos">0</span><span class="stat-label">Total médicos</span></div>
+        <div class="stat"><span class="stat-num" id="stat-total-visitas">0</span><span class="stat-label">Visitas este mes</span></div>
+        <div class="stat"><span class="stat-num" id="stat-cobertura">0%</span><span class="stat-label">Cobertura semanal</span></div>
+      </div>
+      <div class="card"><h3>📊 Visitas por día (esta semana)</h3><canvas id="chart-semanal" width="350" height="200"></canvas></div>
+      <div class="card"><h3>📊 Visitas por médico (top 10)</h3><canvas id="chart-medicos" width="350" height="200"></canvas></div>
+      <div class="card"><h3>📊 Cobertura mensual</h3><canvas id="chart-mensual" width="350" height="200"></canvas></div>
+      <div class="card"><h3>📊 Por zona</h3><canvas id="chart-zonas" width="350" height="200"></canvas></div>
+    </section>
+
+    <section id="exportar" class="section">
+      <h2>📥 Exportar Ruta Semanal</h2>
+      <div class="card">
+        <p>Genera un archivo Excel (.xlsx) con toda tu ruta semanal, incluyendo franjas horarias, médicos, especialidades y notas.</p>
+        <button id="btn-export-csv" class="btn-primary">📊 Descargar CSV</button>
+        <button id="btn-export-xlsx" class="btn-secondary">📊 Descargar Excel (.xls)</button>
+      </div>
+      <div class="card">
+        <h3>📥 Importar médicos (CSV)</h3>
+        <p>Formato: Nombre,Código,Especialidad,Horarios,Nota,Lat,Lng,Zona</p>
+        <input type="file" id="import-csv" accept=".csv">
+      </div>
+    </section>
+
+  </main>
+
+  <div id="modal-medico" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>👨‍⚕️ Nuevo Médico</h3>
+        <button class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <label>Nombre:</label><input type="text" id="med-nombre" placeholder="Dr. Pérez">
+        <label>Código:</label><input type="text" id="med-codigo" placeholder="MED-001">
+        <label>Especialidad:</label><input type="text" id="med-especialidad" placeholder="Cardiología">
+        <label>Zona:</label>
+        <select id="med-zona"><option value="managua">Managua</option><option value="leon">León</option></select>
+        <label>Nota:</label><input type="text" id="med-nota" placeholder="Llegar antes de las 10am">
+        <div class="gps-section">
+          <label>📍 Ubicación del consultorio</label>
+          <div class="gps-row">
+            <input type="number" id="med-lat" step="0.0001" placeholder="Latitud">
+            <input type="number" id="med-lng" step="0.0001" placeholder="Longitud">
+          </div>
+          <button id="btn-capturar-gps" class="btn-gps">📡 Capturar mi ubicación actual</button>
+          <p class="gps-hint">💡 O abrí Google Maps, mantené presionado el punto → "Compartir" → copiá las coordenadas.</p>
+        </div>
+        <h4>🕐 Franjas Horarias</h4>
+        <div id="franjas-container">
+          <div class="franja-row" data-index="0">
+            <div class="dias-checks">
+              <label><input type="checkbox" class="dia-check" value="1"> Lun</label>
+              <label><input type="checkbox" class="dia-check" value="2"> Mar</label>
+              <label><input type="checkbox" class="dia-check" value="3"> Mié</label>
+              <label><input type="checkbox" class="dia-check" value="4"> Jue</label>
+              <label><input type="checkbox" class="dia-check" value="5"> Vie</label>
+              <label><input type="checkbox" class="dia-check" value="6"> Sáb</label>
+            </div>
+            <div class="horario-inputs">
+              <input type="time" class="hora-inicio" value="08:00">
+              <span>a</span>
+              <input type="time" class="hora-fin" value="11:00">
+            </div>
+          </div>
+        </div>
+        <button id="btn-add-franja" class="btn-outline">+ Agregar otra franja</button>
+      </div>
+      <div class="modal-footer">
+        <button id="btn-guardar-medico" class="btn-primary">Guardar Médico</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-plantillas" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>📋 Plantillas de Visita Médica</h3>
+        <button class="modal-close" onclick="$('#modal-plantillas').classList.add('hidden')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="plantilla-list">
+          <button class="plantilla-btn" data-template="general"><strong>🩺 Visita General</strong><span>Revisión de portafolio, muestras entregadas, feedback del médico.</span></button>
+          <button class="plantilla-btn" data-template="nuevo"><strong>🆕 Primer Contacto</strong><span>Presentación de la empresa, productos ofrecidos, próximos pasos.</span></button>
+          <button class="plantilla-btn" data-template="seguimiento"><strong>🔄 Seguimiento</strong><span>Verificación de pedidos, resolución de dudas, fidelización.</span></button>
+          <button class="plantilla-btn" data-template="muestras"><strong>💊 Entrega de Muestras</strong><span>Detalle de muestras entregadas, reacciones, solicitudes.</span></button>
+          <button class="plantilla-btn" data-template="queja"><strong>⚠️ Queja / Observación</strong><span>Registro de inconveniente, acciones correctivas, seguimiento.</span></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="app.js"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js');
+  }
+</script>
+</body>
+</html>
