@@ -15,14 +15,13 @@
 <!-- LOGIN OVERLAY -->
 <div id="login-overlay">
   <div class="login-box">
-    <div class="login-logo">🏥 INFASA</div>
-    <h2 id="login-title">Bloqueo de seguridad</h2>
-    <p id="login-subtitle">Esta app está protegida con encriptación</p>
-    <input type="password" id="login-pass" placeholder="Contraseña" autocomplete="off">
-    <input type="password" id="login-pass-confirm" placeholder="Confirmar contraseña" class="hidden" autocomplete="off">
-    <div id="login-error" class="login-error hidden"></div>
+    <div class="login-logo">🔒</div>
+    <h2 id="login-title">Acceso protegido</h2>
+    <p id="login-subtitle">Ingresá el código de acceso</p>
+    <input type="password" id="login-pass" placeholder="••••" maxlength="10" autocomplete="off" inputmode="numeric">
+    <div id="login-error" class="login-error hidden">Código incorrecto</div>
     <button id="btn-login" class="btn-primary" style="width:100%;margin-top:12px;">Entrar</button>
-    <p class="login-hint">🔒 Tus datos se encriptan en este dispositivo. Sin esta contraseña nadie puede acceder.</p>
+    <p class="login-hint">💡 Tu teléfono ya tiene bloqueo de pantalla. Este código es extra.</p>
   </div>
 </div>
 
@@ -48,6 +47,7 @@
     <a href="#" data-section="estadisticas" class="nav-link">📈 Estadísticas</a>
     <a href="#" data-section="exportar" class="nav-link">📥 Exportar</a>
     <div style="border-top:1px solid var(--border);margin:8px 0;"></div>
+    <a href="#" id="btn-cambiar-pin" class="nav-link">🔑 Cambiar código</a>
     <a href="#" id="btn-cerrar-sesion" class="nav-link" style="color:var(--danger)">🔒 Cerrar sesión</a>
   </nav>
 
@@ -257,7 +257,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h3>📋 Plantillas de Visita Médica</h3>
-        <button class="modal-close" onclick="$('#modal-plantillas').classList.add('hidden')">&times;</button>
+        <button class="modal-close" onclick="document.getElementById('modal-plantillas').classList.add('hidden')">&times;</button>
       </div>
       <div class="modal-body">
         <div class="plantilla-list">
@@ -267,6 +267,28 @@
           <button class="plantilla-btn" data-template="muestras"><strong>💊 Entrega de Muestras</strong><span>Detalle de muestras entregadas, reacciones, solicitudes.</span></button>
           <button class="plantilla-btn" data-template="queja"><strong>⚠️ Queja / Observación</strong><span>Registro de inconveniente, acciones correctivas, seguimiento.</span></button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL CAMBIAR PIN -->
+  <div id="modal-cambiar-pin" class="modal hidden">
+    <div class="modal-content" style="max-width:360px;">
+      <div class="modal-header">
+        <h3>🔑 Cambiar código de acceso</h3>
+        <button class="modal-close" onclick="document.getElementById('modal-cambiar-pin').classList.add('hidden')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <label>Código actual:</label>
+        <input type="password" id="pin-actual" placeholder="••••" maxlength="10" inputmode="numeric">
+        <label>Código nuevo:</label>
+        <input type="password" id="pin-nuevo" placeholder="••••" maxlength="10" inputmode="numeric">
+        <label>Confirmar código nuevo:</label>
+        <input type="password" id="pin-confirmar" placeholder="••••" maxlength="10" inputmode="numeric">
+        <div id="pin-error" class="login-error hidden" style="margin-top:10px;"></div>
+      </div>
+      <div class="modal-footer">
+        <button id="btn-guardar-pin" class="btn-primary">Guardar nuevo código</button>
       </div>
     </div>
   </div>

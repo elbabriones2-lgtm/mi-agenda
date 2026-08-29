@@ -1,16 +1,11 @@
 /* ============================================================
-   INFASA — Gestión de Visitas Médicas v2.3
+   Mi Agenda — Gestión de Visitas Médicas v2.6
    Features: GPS | Horario sugerido | IA redacción | Mapa | Waze
-             Estadísticas | Export Excel | 🔒 ENCRIPTACIÓN + LOGIN
+             Estadísticas | Export Excel | 🔒 PIN de acceso
    ============================================================ */
 
 const DIAS = ['','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const DIAS_CORTO = ['','Lu','Ma','Mi','Ju','Vi','Sa'];
-
-// ===== ENCRYPTION STATE =====
-let cryptoKey = null;
-let cryptoSalt = null;
-let isFirstTime = false;
 
 // ===== APP DATA =====
 let medicos = [];
@@ -21,185 +16,33 @@ let miUbicacion = null;
 
 const CENTROS = { managua: [12.1364, -86.2514], leon: [12.4379, -86.8780] };
 
-// ===== CRYPTO HELPERS =====
-async function generateSalt() {
-  const buf = new Uint8Array(16);
-  crypto.getRandomValues(buf);
-  return buf;
-}
-
-async function deriveKey(password, salt) {
-  const enc = new TextEncoder();
-  const keyMaterial = await crypto.subtle.importKey(
-    "raw", enc.encode(password), {name: "PBKDF2"}, false, ["deriveKey"]
-  );
-  return crypto.subtle.deriveKey(
-    {name: "PBKDF2", salt, iterations: 100000, hash: "SHA-256"},
-    keyMaterial, {name: "AES-GCM", length: 256}, false, ["encrypt", "decrypt"]
-  );
-}
-
-async function encryptData(data, key) {
-  const enc = new TextEncoder();
-  const iv = new Uint8Array(12);
-  crypto.getRandomValues(iv);
-  const ciphertext = await crypto.subtle.encrypt(
-    {name: "AES-GCM", iv}, key, enc.encode(JSON.stringify(data))
-  );
-  const combined = new Uint8Array(iv.length + ciphertext.byteLength);
-  combined.set(iv); combined.set(new Uint8Array(ciphertext), iv.length);
-  return btoa(String.fromCharCode(...combined));
-}
-
-async function decryptData(base64, key) {
-  const combined = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
-  const iv = combined.slice(0, 12);
-  const ciphertext = combined.slice(12);
-  const decrypted = await crypto.subtle.decrypt(
-    {name: "AES-GCM", iv}, key, ciphertext
-  );
-  return JSON.parse(new TextDecoder().decode(decrypted));
-}
-
-async function hashPassword(password, salt) {
-  const enc = new TextEncoder();
-  const keyMaterial = await crypto.subtle.importKey(
-    "raw", enc.encode(password), {name: "PBKDF2"}, false, ["deriveBits"]
-  );
-  const bits = await crypto.subtle.deriveBits(
-    {name: "PBKDF2", salt, iterations: 100000, hash: "SHA-256"},
-    keyMaterial, 256
-  );
-  return btoa(String.fromCharCode(...new Uint8Array(bits)));
-}
-
-// ===== SECURE STORAGE =====
-async function secureSave() {
-  if (!cryptoKey) return;
-  const payload = {medicos, rutaSemanal, visitas, recordatorios, miUbicacion};
-  const encrypted = await encryptData(payload, cryptoKey);
-  localStorage.setItem('infasa_secure_data', encrypted);
-}
-
-async function secureLoad() {
-  const encrypted = localStorage.getItem('infasa_secure_data');
-  if (!encrypted || !cryptoKey) return false;
+// ===== STORAGE =====
+function saveData() {
   try {
-    const data = await decryptData(encrypted, cryptoKey);
-    medicos = data.medicos || [];
-    rutaSemanal = data.rutaSemanal || {};
-    visitas = data.visitas || [];
-    recordatorios = data.recordatorios || [];
-    miUbicacion = data.miUbicacion || null;
-    return true;
+    localStorage.setItem('agenda_medicos', JSON.stringify(medicos));
+    localStorage.setItem('agenda_ruta', JSON.stringify(rutaSemanal));
+    localStorage.setItem('agenda_visitas', JSON.stringify(visitas));
+    localStorage.setItem('agenda_recordatorios', JSON.stringify(recordatorios));
+    localStorage.setItem('agenda_mi_ubicacion', JSON.stringify(miUbicacion));
   } catch(e) {
-    return false;
+    showToast('Error guardando datos: ' + e.message, 'err');
   }
 }
 
-// ===== LOGIN FLOW =====
-async function initLogin() {
-  const configRaw = localStorage.getItem('infasa_secure_config');
-  const overlay = $('#login-overlay');
-  const app = $('#app');
-  const title = $('#login-title');
-  const subtitle = $('#login-subtitle');
-  const confirmInput = $('#login-pass-confirm');
-  const loginBtn = $('#btn-login');
-
-  if (!configRaw) {
-    // Primera vez
-    isFirstTime = true;
-    title.textContent = 'Crear contraseña de seguridad';
-    subtitle.textContent = 'Protegé tus datos médicos con encriptación';
-    confirmInput.classList.remove('hidden');
-    overlay.classList.remove('hidden');
-    app.classList.add('hidden');
-  } else {
-    // Ya tiene contraseña
-    isFirstTime = false;
-    const config = JSON.parse(configRaw);
-    cryptoSalt = Uint8Array.from(atob(config.salt), c => c.charCodeAt(0));
-    title.textContent = 'Ingresar contraseña';
-    subtitle.textContent = 'Tus datos están encriptados en este dispositivo';
-    confirmInput.classList.add('hidden');
-    overlay.classList.remove('hidden');
-    app.classList.add('hidden');
-  }
-
-  loginBtn.onclick = async () => {
-    const pass = $('#login-pass').value.trim();
-    const errorEl = $('#login-error');
-    if (!pass || pass.length < 4) {
-      errorEl.textContent = 'La contraseña debe tener al menos 4 caracteres';
-      errorEl.classList.remove('hidden');
-      return;
-    }
-
-    if (isFirstTime) {
-      const pass2 = $('#login-pass-confirm').value.trim();
-      if (pass !== pass2) {
-        errorEl.textContent = 'Las contraseñas no coinciden';
-        errorEl.classList.remove('hidden');
-        return;
-      }
-      // Crear nueva configuración
-      cryptoSalt = await generateSalt();
-      cryptoKey = await deriveKey(pass, cryptoSalt);
-      const passHash = await hashPassword(pass, cryptoSalt);
-      const config = {
-        salt: btoa(String.fromCharCode(...cryptoSalt)),
-        hash: passHash,
-        created: new Date().toISOString()
-      };
-      localStorage.setItem('infasa_secure_config', JSON.stringify(config));
-      // Migrar datos existentes si hay
-      await migrateLegacyData();
-      await secureSave();
+function loadData() {
+  try {
+    const rawMed = localStorage.getItem('agenda_medicos');
+    if (rawMed) {
+      medicos = JSON.parse(rawMed);
+      rutaSemanal = JSON.parse(localStorage.getItem('agenda_ruta') || '{}');
+      visitas = JSON.parse(localStorage.getItem('agenda_visitas') || '[]');
+      recordatorios = JSON.parse(localStorage.getItem('agenda_recordatorios') || '[]');
+      miUbicacion = JSON.parse(localStorage.getItem('agenda_mi_ubicacion') || 'null');
     } else {
-      // Verificar
-      cryptoKey = await deriveKey(pass, cryptoSalt);
-      const config = JSON.parse(localStorage.getItem('infasa_secure_config'));
-      const passHash = await hashPassword(pass, cryptoSalt);
-      if (passHash !== config.hash) {
-        errorEl.textContent = 'Contraseña incorrecta';
-        errorEl.classList.remove('hidden');
-        cryptoKey = null;
-        return;
-      }
-      const ok = await secureLoad();
-      if (!ok) {
-        errorEl.textContent = 'Error al desencriptar. ¿Contraseña correcta?';
-        errorEl.classList.remove('hidden');
-        cryptoKey = null;
-        return;
-      }
+      seedDemo();
     }
-
-    // Entrar a la app
-    overlay.classList.add('hidden');
-    app.classList.remove('hidden');
-    errorEl.classList.add('hidden');
-    initApp();
-  };
-}
-
-async function migrateLegacyData() {
-  // Si hay datos sin encriptar, los migra
-  const oldMed = localStorage.getItem('infasa_medicos');
-  if (oldMed) {
-    medicos = JSON.parse(oldMed);
-    rutaSemanal = JSON.parse(localStorage.getItem('infasa_ruta') || '{}');
-    visitas = JSON.parse(localStorage.getItem('infasa_visitas') || '[]');
-    recordatorios = JSON.parse(localStorage.getItem('infasa_recordatorios') || '[]');
-    miUbicacion = JSON.parse(localStorage.getItem('infasa_mi_ubicacion') || 'null');
-    // Limpiar legacy
-    localStorage.removeItem('infasa_medicos');
-    localStorage.removeItem('infasa_ruta');
-    localStorage.removeItem('infasa_visitas');
-    localStorage.removeItem('infasa_recordatorios');
-    localStorage.removeItem('infasa_mi_ubicacion');
-  } else {
+  } catch(e) {
+    showToast('Error cargando datos', 'err');
     seedDemo();
   }
 }
@@ -231,6 +74,144 @@ function seedDemo() {
   ];
   rutaSemanal = { 1:[1,3,4,5,7], 2:[1,2,4,6,7], 3:[1,3,4,5,7], 4:[1,2,4,6,7], 5:[1,3,4,5,7], 6:[] };
 }
+
+// ===== PIN SYSTEM =====
+function getStoredPin() {
+  return localStorage.getItem('agenda_pin');
+}
+
+function setPin(pin) {
+  localStorage.setItem('agenda_pin', pin);
+}
+
+function isSessionActive() {
+  const session = sessionStorage.getItem('agenda_session');
+  if (!session) return false;
+  try {
+    const data = JSON.parse(session);
+    return (Date.now() - data.time) < (8 * 60 * 60 * 1000);
+  } catch(e) { return false; }
+}
+
+function activateSession() {
+  sessionStorage.setItem('agenda_session', JSON.stringify({time: Date.now()}));
+}
+
+function clearSession() {
+  sessionStorage.removeItem('agenda_session');
+}
+
+function initLogin() {
+  const overlay = document.getElementById('login-overlay');
+  const app = document.getElementById('app');
+  const title = document.getElementById('login-title');
+  const subtitle = document.getElementById('login-subtitle');
+  const errorEl = document.getElementById('login-error');
+  const passInput = document.getElementById('login-pass');
+  const loginBtn = document.getElementById('btn-login');
+
+  // Si ya tiene sesión activa, entrar directo
+  if (isSessionActive()) {
+    overlay.classList.add('hidden');
+    app.classList.remove('hidden');
+    initApp();
+    return;
+  }
+
+  const storedPin = getStoredPin();
+  const isFirstTime = !storedPin;
+
+  if (isFirstTime) {
+    title.textContent = 'Crear código de acceso';
+    subtitle.textContent = 'Elegí un código para proteger tu agenda';
+  } else {
+    title.textContent = 'Acceso protegido';
+    subtitle.textContent = 'Ingresá el código de acceso';
+  }
+
+  overlay.classList.remove('hidden');
+  app.classList.add('hidden');
+  passInput.value = '';
+  passInput.focus();
+
+  loginBtn.onclick = () => {
+    const pin = passInput.value.trim();
+    if (!pin || pin.length < 3) {
+      errorEl.textContent = 'El código debe tener al menos 3 caracteres';
+      errorEl.classList.remove('hidden');
+      return;
+    }
+
+    if (isFirstTime) {
+      // Crear PIN nuevo
+      setPin(pin);
+      activateSession();
+      overlay.classList.add('hidden');
+      app.classList.remove('hidden');
+      errorEl.classList.add('hidden');
+      initApp();
+      showToast('🔒 Código creado. Bienvenido.', 'ok');
+    } else {
+      // Verificar PIN
+      if (pin === storedPin) {
+        activateSession();
+        overlay.classList.add('hidden');
+        app.classList.remove('hidden');
+        errorEl.classList.add('hidden');
+        initApp();
+      } else {
+        errorEl.textContent = 'Código incorrecto';
+        errorEl.classList.remove('hidden');
+        passInput.value = '';
+        passInput.focus();
+      }
+    }
+  };
+
+  passInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') loginBtn.click();
+  });
+}
+
+// ===== CAMBIAR PIN =====
+document.getElementById('btn-cambiar-pin').addEventListener('click', (e) => {
+  e.preventDefault();
+  document.getElementById('modal-cambiar-pin').classList.remove('hidden');
+  document.getElementById('pin-actual').value = '';
+  document.getElementById('pin-nuevo').value = '';
+  document.getElementById('pin-confirmar').value = '';
+  document.getElementById('pin-error').classList.add('hidden');
+  document.getElementById('main-nav').classList.add('hidden');
+  document.getElementById('nav-overlay').classList.add('hidden');
+});
+
+document.getElementById('btn-guardar-pin').addEventListener('click', () => {
+  const actual = document.getElementById('pin-actual').value.trim();
+  const nuevo = document.getElementById('pin-nuevo').value.trim();
+  const confirmar = document.getElementById('pin-confirmar').value.trim();
+  const errorEl = document.getElementById('pin-error');
+  const storedPin = getStoredPin();
+
+  if (actual !== storedPin) {
+    errorEl.textContent = 'Código actual incorrecto';
+    errorEl.classList.remove('hidden');
+    return;
+  }
+  if (!nuevo || nuevo.length < 3) {
+    errorEl.textContent = 'El código nuevo debe tener al menos 3 caracteres';
+    errorEl.classList.remove('hidden');
+    return;
+  }
+  if (nuevo !== confirmar) {
+    errorEl.textContent = 'Los códigos nuevos no coinciden';
+    errorEl.classList.remove('hidden');
+    return;
+  }
+
+  setPin(nuevo);
+  document.getElementById('modal-cambiar-pin').classList.add('hidden');
+  showToast('🔑 Código cambiado correctamente', 'ok');
+});
 
 // ===== DOM HELPERS =====
 const $ = (sel) => document.querySelector(sel);
@@ -272,7 +253,7 @@ function capturarGPS(callback) {
   navigator.geolocation.getCurrentPosition(
     (pos) => {
       miUbicacion = { lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy, timestamp: new Date().toISOString() };
-      secureSave();
+      saveData();
       showToast(`📍 ${miUbicacion.lat.toFixed(4)}, ${miUbicacion.lng.toFixed(4)}`, 'ok');
       if (callback) callback(miUbicacion);
     },
@@ -314,14 +295,15 @@ $$('.nav-link').forEach(link => {
 // Cerrar sesión
 $('#btn-cerrar-sesion').addEventListener('click', (e) => {
   e.preventDefault();
-  cryptoKey = null;
+  clearSession();
   $('#login-pass').value = '';
-  $('#login-pass-confirm').value = '';
   $('#login-overlay').classList.remove('hidden');
   $('#app').classList.add('hidden');
   $('#main-nav').classList.add('hidden');
   $('#nav-overlay').classList.add('hidden');
-  showToast('Sesión cerrada. Tus datos quedaron encriptados.', 'ok');
+  showToast('Sesión cerrada. Ingresá el código para volver.', 'ok');
+  // Re-inicializar login
+  setTimeout(initLogin, 300);
 });
 
 // ===== DASHBOARD =====
@@ -381,7 +363,7 @@ window.eliminarMedico = function(id) {
   if (!confirm('¿Eliminar este médico?')) return;
   medicos = medicos.filter(m => m.id !== id);
   Object.keys(rutaSemanal).forEach(d => { rutaSemanal[d] = rutaSemanal[d].filter(x => x !== id); });
-  secureSave();
+  saveData();
   renderMedicos();
   renderDashboard();
   showToast('Médico eliminado', 'ok');
@@ -438,7 +420,7 @@ $('#btn-guardar-medico').addEventListener('click', () => {
     franjas
   };
   medicos.push(medico);
-  secureSave();
+  saveData();
   $('#modal-medico').classList.add('hidden');
   renderMedicos();
   renderDashboard();
@@ -469,7 +451,7 @@ function renderRutaDia(dia) {
 }
 window.quitarDeRuta = function(dia, id) {
   rutaSemanal[dia] = (rutaSemanal[dia] || []).filter(x => x !== id);
-  secureSave();
+  saveData();
   renderRutaDia(dia);
   renderDashboard();
 };
@@ -482,7 +464,7 @@ $('#btn-add-ruta').addEventListener('click', () => {
   if (!rutaSemanal[currentRutaDay]) rutaSemanal[currentRutaDay] = [];
   if (rutaSemanal[currentRutaDay].includes(id)) { showToast('Ya está en la ruta', 'warn'); return; }
   rutaSemanal[currentRutaDay].push(id);
-  secureSave();
+  saveData();
   renderRutaDia(currentRutaDay);
   renderDashboard();
   showToast('Agregado a la ruta', 'ok');
@@ -584,9 +566,9 @@ $('#visita-medico, #visita-fecha, #visita-hora').forEach(el => {
 
 // ===== IA REDACCIÓN =====
 const PLANTILLAS = {
-  general: `Se realizó visita médica al Dr./Dra. [NOMBRE], especialista en [ESPECIALIDAD]. Se presentó el portafolio de productos INFASA, se entregaron muestras según solicitud y se recogió feedback sobre la experiencia con los medicamentos. El médico manifestó interés en continuar recibiendo información actualizada. Próxima visita programada según calendario establecido.`,
-  nuevo: `Primer contacto con el Dr./Dra. [NOMBRE], especialista en [ESPECIALIDAD]. Se presentó la empresa INFASA y el portafolio de productos disponibles. Se entregó material informativo y muestras de presentación. El médico mostró interés en [PRODUCTO]. Se acordó realizar seguimiento en la próxima visita para evaluar la incorporación de los productos a su prescripción habitual.`,
-  seguimiento: `Visita de seguimiento al Dr./Dra. [NOMBRE]. Se verificó el estado de pedidos pendientes y se resolvieron dudas sobre indicaciones y posología de los productos INFASA. El médico reportó [OBSERVACIONES]. Se reforzó el compromiso de fidelización y se programó la próxima entrega de muestras.`,
+  general: `Se realizó visita médica al Dr./Dra. [NOMBRE], especialista en [ESPECIALIDAD]. Se presentó el portafolio de productos, se entregaron muestras según solicitud y se recogió feedback sobre la experiencia con los medicamentos. El médico manifestó interés en continuar recibiendo información actualizada. Próxima visita programada según calendario establecido.`,
+  nuevo: `Primer contacto con el Dr./Dra. [NOMBRE], especialista en [ESPECIALIDAD]. Se presentó la empresa y el portafolio de productos disponibles. Se entregó material informativo y muestras de presentación. El médico mostró interés en [PRODUCTO]. Se acordó realizar seguimiento en la próxima visita para evaluar la incorporación de los productos a su prescripción habitual.`,
+  seguimiento: `Visita de seguimiento al Dr./Dra. [NOMBRE]. Se verificó el estado de pedidos pendientes y se resolvieron dudas sobre indicaciones y posología de los productos. El médico reportó [OBSERVACIONES]. Se reforzó el compromiso de fidelización y se programó la próxima entrega de muestras.`,
   muestras: `Se realizó entrega de muestras médicas al Dr./Dra. [NOMBRE], especialista en [ESPECIALIDAD]. Productos entregados: [DETALLE]. El médico reportó [REACCIONES/SOLICITUDES]. Se documentó la recepción y se coordinó la reposición de inventario para la próxima visita.`,
   queja: `Durante la visita al Dr./Dra. [NOMBRE], se registró el siguiente inconveniente: [DETALLE]. Se tomaron las siguientes acciones correctivas: [ACCIONES]. Se acordó realizar seguimiento en la próxima visita para verificar la resolución del caso. El médico quedó satisfecho con la atención brindada.`
 };
@@ -598,7 +580,7 @@ function pulirRedaccionIA(texto, medico) {
   if (!pulido.endsWith('.')) pulido += '.';
   const reemplazos = {'q': 'que', 'xq': 'porque', 'x': 'por', 'tb': 'también', 'bn': 'bien', 'msj': 'mensaje', 'info': 'información', 'dr': 'doctor', 'dra': 'doctora', 'pac': 'paciente', 'recet': 'recetó', 'indic': 'indicó', 'preg': 'preguntó'};
   Object.entries(reemplazos).forEach(([k, v]) => {
-    const regex = new RegExp(`\\b${k}\\b`, 'gi');
+    const regex = new RegExp(`\b${k}\b`, 'gi');
     pulido = pulido.replace(regex, v);
   });
   if (pulido.length > 120 && !pulido.includes('\n')) {
@@ -622,7 +604,7 @@ $('#btn-pulir-ia').addEventListener('click', () => {
   const medico = medId ? getMedico(medId) : null;
   const pulido = pulirRedaccionIA(texto, medico);
   const preview = $('#ia-preview');
-  preview.innerHTML = `<div class="ia-label">✨ Versión pulida por IA</div><div class="ia-text">${pulido.replace(/\n/g, '<br>')}</div><div class="ia-actions-footer"><button class="btn-ia" onclick="aplicarTextoPulido()">✅ Aplicar este texto</button><button class="btn-outline btn-small" onclick="$('#ia-preview').classList.add('hidden')">❌ Descartar</button></div>`;
+  preview.innerHTML = `<div class="ia-label">✨ Versión pulida por IA</div><div class="ia-text">${pulido.replace(/\n/g, '<br>')}</div><div class="ia-actions-footer"><button class="btn-ia" onclick="aplicarTextoPulido()">✅ Aplicar este texto</button><button class="btn-outline btn-small" onclick="document.getElementById('ia-preview').classList.add('hidden')">❌ Descartar</button></div>`;
   preview.dataset.pulido = pulido;
   preview.classList.remove('hidden');
 });
@@ -653,7 +635,7 @@ $('#btn-guardar-visita').addEventListener('click', () => {
   const notas = $('#visita-notas').value.trim();
   if (!medId || !fecha || !hora) { showToast('Completa todos los campos', 'err'); return; }
   visitas.push({ id: nextId(visitas), medicoId: medId, fecha, hora, notas, timestamp: new Date().toISOString() });
-  secureSave();
+  saveData();
   $('#visita-notas').value = ''; $('#visita-hora').value = '';
   $('#visita-validacion').className = 'validation-msg';
   $('#hora-sugerida-msg').className = 'sugerencia-msg';
@@ -707,7 +689,7 @@ function crearRecordatoriosDelDia() {
       }
     });
   });
-  secureSave();
+  saveData();
   renderDashboard();
 }
 setInterval(() => {
@@ -717,9 +699,9 @@ setInterval(() => {
   recordatorios.forEach(r => {
     if (r.disparado) return;
     if (r.hora === horaStr && new Date(r.fecha).toDateString() === ahora.toDateString()) {
-      r.disparado = true; secureSave();
+      r.disparado = true; saveData();
       if (Notification.permission === 'granted') {
-        new Notification('🔔 INFASA — Recordatorio de Visita', {
+        new Notification('🔔 Recordatorio de Visita', {
           body: r.msg,
           icon: 'https://cdn-icons-png.flaticon.com/512/2964/2964514.png'
         });
@@ -959,7 +941,7 @@ $('#btn-export-csv').addEventListener('click', () => {
   }
   const blob = new Blob(["\uFEFF"+csv], {type:'text/csv;charset=utf-8;'});
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = 'INFASA_RutaSemanal.csv'; a.click();
+  const a = document.createElement('a'); a.href = url; a.download = 'RutaSemanal.csv'; a.click();
   showToast('CSV descargado', 'ok');
 });
 
@@ -980,7 +962,7 @@ $('#btn-export-xlsx').addEventListener('click', () => {
   html += '</table></body></html>';
   const blob = new Blob([html], {type:'application/vnd.ms-excel'});
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = 'INFASA_RutaSemanal.xls'; a.click();
+  const a = document.createElement('a'); a.href = url; a.download = 'RutaSemanal.xls'; a.click();
   showToast('Excel descargado', 'ok');
 });
 
@@ -1012,7 +994,7 @@ $('#import-csv').addEventListener('change', (e) => {
       });
       count++;
     });
-    secureSave(); renderMedicos(); renderDashboard();
+    saveData(); renderMedicos(); renderDashboard();
     showToast(`${count} medicos importados`, 'ok');
     e.target.value = '';
   };
@@ -1021,6 +1003,7 @@ $('#import-csv').addEventListener('change', (e) => {
 
 // ===== INIT APP =====
 function initApp() {
+  loadData();
   renderDashboard();
   renderMedicos();
 }
