@@ -27,8 +27,8 @@ async function limpiarTodo() {
   try {
     localStorage.clear();
     sessionStorage.clear();
-    const regs = await navigator.serviceWorker.getRegistrations();
-    for (const reg of regs) { await reg.unregister(); }
+    var regs = await navigator.serviceWorker.getRegistrations();
+    for (var i = 0; i < regs.length; i++) { await regs[i].unregister(); }
     document.getElementById('msg').innerHTML = '<div class="ok">✅ Todo limpiado. Toca "Volver a la app" abajo.</div>';
   } catch(e) {
     document.getElementById('msg').innerHTML = '<div class="ok">⚠️ ' + e.message + '</div>';

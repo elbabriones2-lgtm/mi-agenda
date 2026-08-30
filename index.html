@@ -5,43 +5,22 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#0d7377">
 <title>Mi Agenda</title>
-<link rel="manifest" href="manifest.json">
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
-<!-- DETECTOR DE SAFARI BLOQUEO -->
-<div id="safari-block" style="display:none;position:fixed;inset:0;background:#0d7377;z-index:9999;align-items:center;justify-content:center;padding:20px;">
-  <div style="background:white;border-radius:20px;padding:28px 24px;max-width:360px;text-align:center;">
-    <div style="font-size:3rem;margin-bottom:8px;">🔒</div>
-    <h2 style="color:#095a5d;margin-bottom:8px;font-size:1.3rem;">Safari está bloqueando la app</h2>
-    <p style="color:#718096;font-size:0.9rem;margin-bottom:16px;line-height:1.5;">
-      Tu iPhone tiene activada la <strong>"Protección de privacidad avanzada"</strong> que impide que la app guarde el código y los datos.
-    </p>
-    <div style="background:#fffbeb;border:1px solid #f6e05e;border-radius:10px;padding:14px;text-align:left;font-size:0.85rem;margin-bottom:16px;">
-      <strong>Para solucionarlo:</strong><br><br>
-      1. Salí de Safari<br>
-      2. Andá a <strong>Ajustes → Safari → Avanzado</strong><br>
-      3. Desactivá <strong>"Protección de privacidad avanzada"</strong><br>
-      4. Volvé a entrar a esta página
-    </div>
-    <button onclick="location.reload()" style="background:var(--primary);color:white;border:none;padding:12px 24px;border-radius:8px;font-weight:600;width:100%;">🔄 Reintentar</button>
-    <a href="reset.html" style="display:block;margin-top:12px;color:var(--primary);font-size:0.85rem;">⚠️ Si ya lo desactivaste, tocá aquí para limpiar todo</a>
-  </div>
-</div>
-
-<!-- LOGIN OVERLAY -->
+<!-- LOGIN -->
 <div id="login-overlay">
   <div class="login-box">
     <div class="login-logo">🔒</div>
-    <h2 id="login-title">Acceso protegido</h2>
-    <p id="login-subtitle">Ingresá el código de acceso</p>
+    <h2>Acceso protegido</h2>
+    <p>Ingresa el codigo de acceso</p>
     <input type="password" id="login-pass" placeholder="••••" maxlength="10" autocomplete="off" inputmode="numeric">
-    <div id="login-error" class="login-error hidden">Código incorrecto</div>
+    <div id="login-error" class="login-error hidden">Codigo incorrecto</div>
     <button id="btn-login" class="btn-primary" style="width:100%;margin-top:12px;">Entrar</button>
-    <p class="login-hint">💡 Tu teléfono ya tiene bloqueo de pantalla. Este código es extra.</p>
+    <p class="login-hint">💡 Tu telefono ya tiene bloqueo de pantalla. Este codigo es extra.</p>
   </div>
 </div>
 
@@ -50,7 +29,7 @@
     <div class="logo">📅 Mi Agenda</div>
     <div class="header-actions">
       <button id="btn-notif" class="icon-btn" title="Activar notificaciones">🔔</button>
-      <button id="btn-gps" class="icon-btn" title="Mi ubicación">📍</button>
+      <button id="btn-gps" class="icon-btn" title="Mi ubicacion">📍</button>
       <button id="btn-menu" class="icon-btn">☰</button>
     </div>
   </header>
@@ -59,16 +38,16 @@
 
   <nav id="main-nav" class="hidden">
     <a href="#" data-section="dashboard" class="nav-link active">📊 Dashboard</a>
-    <a href="#" data-section="medicos" class="nav-link">👨‍⚕️ Médicos</a>
+    <a href="#" data-section="medicos" class="nav-link">👨‍⚕️ Medicos</a>
     <a href="#" data-section="ruta" class="nav-link">🗓️ Mi Ruta Semanal</a>
     <a href="#" data-section="visita" class="nav-link">📝 Registrar Visita</a>
-    <a href="#" data-section="ruta-optima" class="nav-link">🗺️ Ruta Óptima</a>
+    <a href="#" data-section="ruta-optima" class="nav-link">🗺️ Ruta Optima</a>
     <a href="#" data-section="mapa" class="nav-link">🗺️ Mapa Zonas</a>
-    <a href="#" data-section="estadisticas" class="nav-link">📈 Estadísticas</a>
+    <a href="#" data-section="estadisticas" class="nav-link">📈 Estadisticas</a>
     <a href="#" data-section="exportar" class="nav-link">📥 Exportar</a>
     <div style="border-top:1px solid var(--border);margin:8px 0;"></div>
-    <a href="#" id="btn-cambiar-pin" class="nav-link">🔑 Cambiar código</a>
-    <a href="#" id="btn-cerrar-sesion" class="nav-link" style="color:var(--danger)">🔒 Cerrar sesión</a>
+    <a href="#" id="btn-cambiar-pin" class="nav-link">🔑 Cambiar codigo</a>
+    <a href="#" id="btn-cerrar-sesion" class="nav-link" style="color:var(--danger)">🔒 Cerrar sesion</a>
   </nav>
 
   <div id="nav-overlay" class="hidden"></div>
@@ -78,16 +57,16 @@
     <section id="dashboard" class="section active">
       <h2>📊 Dashboard de Hoy</h2>
       <div class="card stats-card">
-        <div class="stat"><span class="stat-num" id="dash-total-hoy">0</span><span class="stat-label">Médicos en ruta hoy</span></div>
+        <div class="stat"><span class="stat-num" id="dash-total-hoy">0</span><span class="stat-label">Medicos en ruta hoy</span></div>
         <div class="stat"><span class="stat-num" id="dash-visitados">0</span><span class="stat-label">Visitados</span></div>
         <div class="stat"><span class="stat-num" id="dash-pendientes">0</span><span class="stat-label">Pendientes</span></div>
       </div>
       <div class="card">
-        <h3>📍 Mi ubicación</h3>
-        <div id="dash-mi-ubicacion">Tocá 📍 en el header para ver tu ubicación actual</div>
+        <h3>📍 Mi ubicacion</h3>
+        <div id="dash-mi-ubicacion">Toca 📍 en el header para ver tu ubicacion actual</div>
       </div>
       <div id="dash-proximas" class="card">
-        <h3>⏰ Próximas atenciones</h3>
+        <h3>⏰ Proximas atenciones</h3>
         <div id="dash-proximas-list">Cargando...</div>
       </div>
       <div class="card">
@@ -97,8 +76,8 @@
     </section>
 
     <section id="medicos" class="section">
-      <h2>👨‍⚕️ Médicos</h2>
-      <button id="btn-add-medico" class="btn-primary">+ Nuevo Médico</button>
+      <h2>👨‍⚕️ Medicos</h2>
+      <button id="btn-add-medico" class="btn-primary">+ Nuevo Medico</button>
       <div id="medicos-list" class="list-container"></div>
     </section>
 
@@ -107,13 +86,13 @@
       <div class="tabs">
         <button class="tab-btn active" data-day="1">Lun</button>
         <button class="tab-btn" data-day="2">Mar</button>
-        <button class="tab-btn" data-day="3">Mié</button>
+        <button class="tab-btn" data-day="3">Mie</button>
         <button class="tab-btn" data-day="4">Jue</button>
         <button class="tab-btn" data-day="5">Vie</button>
-        <button class="tab-btn" data-day="6">Sáb</button>
+        <button class="tab-btn" data-day="6">Sab</button>
       </div>
       <div id="ruta-dia-content" class="card">
-        <p>Selecciona un médico para agregarlo a la ruta de <strong id="ruta-dia-nombre">Lunes</strong>:</p>
+        <p>Selecciona un medico para agregarlo a la ruta de <strong id="ruta-dia-nombre">Lunes</strong>:</p>
         <select id="select-medico-ruta"></select>
         <button id="btn-add-ruta" class="btn-secondary">Agregar a ruta</button>
         <div id="ruta-dia-list" class="list-container"></div>
@@ -123,7 +102,7 @@
     <section id="visita" class="section">
       <h2>📝 Registrar Visita</h2>
       <div class="card form-card">
-        <label>Médico:</label><select id="visita-medico"></select>
+        <label>Medico:</label><select id="visita-medico"></select>
         <label>Fecha:</label><input type="date" id="visita-fecha">
         <label>Hora de cita:</label>
         <div class="hora-sugerida-row">
@@ -133,9 +112,9 @@
         <div id="hora-sugerida-msg" class="sugerencia-msg"></div>
         <div id="visita-validacion" class="validation-msg"></div>
         <label>Observaciones:</label>
-        <textarea id="visita-notas" rows="4" placeholder="Escribí tus notas de la visita..."></textarea>
+        <textarea id="visita-notas" rows="4" placeholder="Escribi tus notas de la visita..."></textarea>
         <div class="ia-actions">
-          <button id="btn-pulir-ia" class="btn-ia">✨ Pulir redacción con IA</button>
+          <button id="btn-pulir-ia" class="btn-ia">✨ Pulir redaccion con IA</button>
           <button id="btn-plantilla-ia" class="btn-ia btn-ia-secondary">📋 Usar plantilla</button>
         </div>
         <div id="ia-preview" class="ia-preview hidden"></div>
@@ -146,20 +125,20 @@
     </section>
 
     <section id="ruta-optima" class="section">
-      <h2>🗺️ Ruta Óptima del Día</h2>
+      <h2>🗺️ Ruta Optima del Dia</h2>
       <div class="card">
-        <label>Selecciona el día:</label>
+        <label>Selecciona el dia:</label>
         <select id="opt-dia">
-          <option value="1">Lunes</option><option value="2">Martes</option><option value="3">Miércoles</option>
-          <option value="4">Jueves</option><option value="5">Viernes</option><option value="6">Sábado</option>
+          <option value="1">Lunes</option><option value="2">Martes</option><option value="3">Miercoles</option>
+          <option value="4">Jueves</option><option value="5">Viernes</option><option value="6">Sabado</option>
         </select>
         <label>Criterio de ordenamiento:</label>
         <select id="opt-criterio">
           <option value="horario">🕐 Por horario de apertura</option>
-          <option value="proximidad">📍 Por proximidad geográfica</option>
+          <option value="proximidad">📍 Por proximidad geografica</option>
           <option value="sin-choque">⚡ Sin choque de horarios</option>
         </select>
-        <button id="btn-calcular-ruta" class="btn-primary">Calcular Ruta Óptima</button>
+        <button id="btn-calcular-ruta" class="btn-primary">Calcular Ruta Optima</button>
       </div>
       <div id="opt-resultado" class="card hidden">
         <h3>📍 Ruta sugerida</h3>
@@ -175,21 +154,21 @@
         <label>Zona:</label>
         <select id="mapa-zona">
           <option value="managua">Managua</option>
-          <option value="leon">León</option>
+          <option value="leon">Leon</option>
         </select>
         <label>Mostrar:</label>
         <select id="mapa-filtro">
-          <option value="todos">Todos los médicos</option>
+          <option value="todos">Todos los medicos</option>
           <option value="ruta-hoy">Solo ruta de hoy</option>
         </select>
-        <button id="btn-mi-ubi-mapa" class="btn-outline btn-small" style="margin-top:8px;">📍 Centrar en mi ubicación</button>
+        <button id="btn-mi-ubi-mapa" class="btn-outline btn-small" style="margin-top:8px;">📍 Centrar en mi ubicacion</button>
       </div>
       <div id="mapa-container" class="mapa-real"></div>
       <div class="card">
         <h3>📍 Leyenda</h3>
         <div class="leyenda">
           <span class="leyenda-item"><span class="pin pin-mana"></span> Managua</span>
-          <span class="leyenda-item"><span class="pin pin-leon"></span> León</span>
+          <span class="leyenda-item"><span class="pin pin-leon"></span> Leon</span>
           <span class="leyenda-item"><span class="pin pin-ruta"></span> En ruta hoy</span>
           <span class="leyenda-item"><span class="pin pin-yo"></span> Yo</span>
         </div>
@@ -197,14 +176,14 @@
     </section>
 
     <section id="estadisticas" class="section">
-      <h2>📈 Estadísticas de Cobertura</h2>
+      <h2>📈 Estadisticas de Cobertura</h2>
       <div class="card stats-card">
-        <div class="stat"><span class="stat-num" id="stat-total-medicos">0</span><span class="stat-label">Total médicos</span></div>
+        <div class="stat"><span class="stat-num" id="stat-total-medicos">0</span><span class="stat-label">Total medicos</span></div>
         <div class="stat"><span class="stat-num" id="stat-total-visitas">0</span><span class="stat-label">Visitas este mes</span></div>
         <div class="stat"><span class="stat-num" id="stat-cobertura">0%</span><span class="stat-label">Cobertura semanal</span></div>
       </div>
-      <div class="card"><h3>📊 Visitas por día (esta semana)</h3><canvas id="chart-semanal" width="350" height="200"></canvas></div>
-      <div class="card"><h3>📊 Visitas por médico (top 10)</h3><canvas id="chart-medicos" width="350" height="200"></canvas></div>
+      <div class="card"><h3>📊 Visitas por dia (esta semana)</h3><canvas id="chart-semanal" width="350" height="200"></canvas></div>
+      <div class="card"><h3>📊 Visitas por medico (top 10)</h3><canvas id="chart-medicos" width="350" height="200"></canvas></div>
       <div class="card"><h3>📊 Cobertura mensual</h3><canvas id="chart-mensual" width="350" height="200"></canvas></div>
       <div class="card"><h3>📊 Por zona</h3><canvas id="chart-zonas" width="350" height="200"></canvas></div>
     </section>
@@ -212,13 +191,13 @@
     <section id="exportar" class="section">
       <h2>📥 Exportar Ruta Semanal</h2>
       <div class="card">
-        <p>Genera un archivo Excel (.xlsx) con toda tu ruta semanal, incluyendo franjas horarias, médicos, especialidades y notas.</p>
+        <p>Genera un archivo Excel (.xlsx) con toda tu ruta semanal, incluyendo franjas horarias, medicos, especialidades y notas.</p>
         <button id="btn-export-csv" class="btn-primary">📊 Descargar CSV</button>
         <button id="btn-export-xlsx" class="btn-secondary">📊 Descargar Excel (.xls)</button>
       </div>
       <div class="card">
-        <h3>📥 Importar médicos (CSV)</h3>
-        <p>Formato: Nombre,Código,Especialidad,Horarios,Nota,Lat,Lng,Zona</p>
+        <h3>📥 Importar medicos (CSV)</h3>
+        <p>Formato: Nombre,Codigo,Especialidad,Horarios,Nota,Lat,Lng,Zona</p>
         <input type="file" id="import-csv" accept=".csv">
       </div>
     </section>
@@ -228,24 +207,24 @@
   <div id="modal-medico" class="modal hidden">
     <div class="modal-content">
       <div class="modal-header">
-        <h3>👨‍⚕️ Nuevo Médico</h3>
+        <h3>👨‍⚕️ Nuevo Medico</h3>
         <button class="modal-close">&times;</button>
       </div>
       <div class="modal-body">
-        <label>Nombre:</label><input type="text" id="med-nombre" placeholder="Dr. Pérez">
-        <label>Código:</label><input type="text" id="med-codigo" placeholder="MED-001">
-        <label>Especialidad:</label><input type="text" id="med-especialidad" placeholder="Cardiología">
+        <label>Nombre:</label><input type="text" id="med-nombre" placeholder="Dr. Perez">
+        <label>Codigo:</label><input type="text" id="med-codigo" placeholder="MED-001">
+        <label>Especialidad:</label><input type="text" id="med-especialidad" placeholder="Cardiologia">
         <label>Zona:</label>
-        <select id="med-zona"><option value="managua">Managua</option><option value="leon">León</option></select>
+        <select id="med-zona"><option value="managua">Managua</option><option value="leon">Leon</option></select>
         <label>Nota:</label><input type="text" id="med-nota" placeholder="Llegar antes de las 10am">
         <div class="gps-section">
-          <label>📍 Ubicación del consultorio</label>
+          <label>📍 Ubicacion del consultorio</label>
           <div class="gps-row">
             <input type="number" id="med-lat" step="0.0001" placeholder="Latitud">
             <input type="number" id="med-lng" step="0.0001" placeholder="Longitud">
           </div>
-          <button id="btn-capturar-gps" class="btn-gps">📡 Capturar mi ubicación actual</button>
-          <p class="gps-hint">💡 O abrí Google Maps, mantené presionado el punto → "Compartir" → copiá las coordenadas.</p>
+          <button id="btn-capturar-gps" class="btn-gps">📡 Capturar mi ubicacion actual</button>
+          <p class="gps-hint">💡 O abri Google Maps, mantene presionado el punto → "Compartir" → copia las coordenadas.</p>
         </div>
         <h4>🕐 Franjas Horarias</h4>
         <div id="franjas-container">
@@ -253,10 +232,10 @@
             <div class="dias-checks">
               <label><input type="checkbox" class="dia-check" value="1"> Lun</label>
               <label><input type="checkbox" class="dia-check" value="2"> Mar</label>
-              <label><input type="checkbox" class="dia-check" value="3"> Mié</label>
+              <label><input type="checkbox" class="dia-check" value="3"> Mie</label>
               <label><input type="checkbox" class="dia-check" value="4"> Jue</label>
               <label><input type="checkbox" class="dia-check" value="5"> Vie</label>
-              <label><input type="checkbox" class="dia-check" value="6"> Sáb</label>
+              <label><input type="checkbox" class="dia-check" value="6"> Sab</label>
             </div>
             <div class="horario-inputs">
               <input type="time" class="hora-inicio" value="08:00">
@@ -268,7 +247,7 @@
         <button id="btn-add-franja" class="btn-outline">+ Agregar otra franja</button>
       </div>
       <div class="modal-footer">
-        <button id="btn-guardar-medico" class="btn-primary">Guardar Médico</button>
+        <button id="btn-guardar-medico" class="btn-primary">Guardar Medico</button>
       </div>
     </div>
   </div>
@@ -276,16 +255,16 @@
   <div id="modal-plantillas" class="modal hidden">
     <div class="modal-content">
       <div class="modal-header">
-        <h3>📋 Plantillas de Visita Médica</h3>
+        <h3>📋 Plantillas de Visita Medica</h3>
         <button class="modal-close" onclick="document.getElementById('modal-plantillas').classList.add('hidden')">&times;</button>
       </div>
       <div class="modal-body">
         <div class="plantilla-list">
-          <button class="plantilla-btn" data-template="general"><strong>🩺 Visita General</strong><span>Revisión de portafolio, muestras entregadas, feedback del médico.</span></button>
-          <button class="plantilla-btn" data-template="nuevo"><strong>🆕 Primer Contacto</strong><span>Presentación de la empresa, productos ofrecidos, próximos pasos.</span></button>
-          <button class="plantilla-btn" data-template="seguimiento"><strong>🔄 Seguimiento</strong><span>Verificación de pedidos, resolución de dudas, fidelización.</span></button>
+          <button class="plantilla-btn" data-template="general"><strong>🩺 Visita General</strong><span>Revision de portafolio, muestras entregadas, feedback del medico.</span></button>
+          <button class="plantilla-btn" data-template="nuevo"><strong>🆕 Primer Contacto</strong><span>Presentacion de la empresa, productos ofrecidos, proximos pasos.</span></button>
+          <button class="plantilla-btn" data-template="seguimiento"><strong>🔄 Seguimiento</strong><span>Verificacion de pedidos, resolucion de dudas, fidelizacion.</span></button>
           <button class="plantilla-btn" data-template="muestras"><strong>💊 Entrega de Muestras</strong><span>Detalle de muestras entregadas, reacciones, solicitudes.</span></button>
-          <button class="plantilla-btn" data-template="queja"><strong>⚠️ Queja / Observación</strong><span>Registro de inconveniente, acciones correctivas, seguimiento.</span></button>
+          <button class="plantilla-btn" data-template="queja"><strong>⚠️ Queja / Observacion</strong><span>Registro de inconveniente, acciones correctivas, seguimiento.</span></button>
         </div>
       </div>
     </div>
@@ -294,20 +273,20 @@
   <div id="modal-cambiar-pin" class="modal hidden">
     <div class="modal-content" style="max-width:360px;">
       <div class="modal-header">
-        <h3>🔑 Cambiar código de acceso</h3>
+        <h3>🔑 Cambiar codigo de acceso</h3>
         <button class="modal-close" onclick="document.getElementById('modal-cambiar-pin').classList.add('hidden')">&times;</button>
       </div>
       <div class="modal-body">
-        <label>Código actual:</label>
+        <label>Codigo actual:</label>
         <input type="password" id="pin-actual" placeholder="••••" maxlength="10" inputmode="numeric">
-        <label>Código nuevo:</label>
+        <label>Codigo nuevo:</label>
         <input type="password" id="pin-nuevo" placeholder="••••" maxlength="10" inputmode="numeric">
-        <label>Confirmar código nuevo:</label>
+        <label>Confirmar codigo nuevo:</label>
         <input type="password" id="pin-confirmar" placeholder="••••" maxlength="10" inputmode="numeric">
         <div id="pin-error" class="login-error hidden" style="margin-top:10px;"></div>
       </div>
       <div class="modal-footer">
-        <button id="btn-guardar-pin" class="btn-primary">Guardar nuevo código</button>
+        <button id="btn-guardar-pin" class="btn-primary">Guardar nuevo codigo</button>
       </div>
     </div>
   </div>
@@ -316,17 +295,5 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="app.js"></script>
-<script>
-  // Detectar si Safari bloquea localStorage
-  try {
-    localStorage.setItem('__test__', '1');
-    localStorage.removeItem('__test__');
-  } catch(e) {
-    document.getElementById('safari-block').style.display = 'flex';
-  }
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js');
-  }
-</script>
 </body>
 </html>
