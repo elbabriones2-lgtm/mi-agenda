@@ -12,6 +12,26 @@
 </head>
 <body>
 
+<!-- DETECTOR DE SAFARI BLOQUEO -->
+<div id="safari-block" style="display:none;position:fixed;inset:0;background:#0d7377;z-index:9999;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:white;border-radius:20px;padding:28px 24px;max-width:360px;text-align:center;">
+    <div style="font-size:3rem;margin-bottom:8px;">🔒</div>
+    <h2 style="color:#095a5d;margin-bottom:8px;font-size:1.3rem;">Safari está bloqueando la app</h2>
+    <p style="color:#718096;font-size:0.9rem;margin-bottom:16px;line-height:1.5;">
+      Tu iPhone tiene activada la <strong>"Protección de privacidad avanzada"</strong> que impide que la app guarde el código y los datos.
+    </p>
+    <div style="background:#fffbeb;border:1px solid #f6e05e;border-radius:10px;padding:14px;text-align:left;font-size:0.85rem;margin-bottom:16px;">
+      <strong>Para solucionarlo:</strong><br><br>
+      1. Salí de Safari<br>
+      2. Andá a <strong>Ajustes → Safari → Avanzado</strong><br>
+      3. Desactivá <strong>"Protección de privacidad avanzada"</strong><br>
+      4. Volvé a entrar a esta página
+    </div>
+    <button onclick="location.reload()" style="background:var(--primary);color:white;border:none;padding:12px 24px;border-radius:8px;font-weight:600;width:100%;">🔄 Reintentar</button>
+    <a href="reset.html" style="display:block;margin-top:12px;color:var(--primary);font-size:0.85rem;">⚠️ Si ya lo desactivaste, tocá aquí para limpiar todo</a>
+  </div>
+</div>
+
 <!-- LOGIN OVERLAY -->
 <div id="login-overlay">
   <div class="login-box">
@@ -271,7 +291,6 @@
     </div>
   </div>
 
-  <!-- MODAL CAMBIAR PIN -->
   <div id="modal-cambiar-pin" class="modal hidden">
     <div class="modal-content" style="max-width:360px;">
       <div class="modal-header">
@@ -298,6 +317,13 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="app.js"></script>
 <script>
+  // Detectar si Safari bloquea localStorage
+  try {
+    localStorage.setItem('__test__', '1');
+    localStorage.removeItem('__test__');
+  } catch(e) {
+    document.getElementById('safari-block').style.display = 'flex';
+  }
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js');
   }

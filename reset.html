@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Limpiar App - Mi Agenda</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #0d7377; color: white; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; }
+  .box { background: white; color: #1a202c; border-radius: 20px; padding: 32px 24px; max-width: 360px; width: 100%; text-align: center; }
+  h2 { color: #095a5d; margin-bottom: 12px; }
+  p { color: #718096; font-size: 0.9rem; margin-bottom: 20px; line-height: 1.5; }
+  button { background: #0d7377; color: white; border: none; padding: 14px; border-radius: 10px; font-weight: 600; width: 100%; font-size: 1rem; margin-bottom: 10px; cursor: pointer; }
+  button.secondary { background: #e2e8f0; color: #1a202c; }
+  .ok { color: #38a169; font-weight: 600; margin-top: 12px; }
+</style>
+</head>
+<body>
+<div class="box">
+  <h2>🧹 Limpiar Mi Agenda</h2>
+  <p>Si la app no carga, se queda en blanco o no acepta el codigo, usa este boton para borrar todo y empezar de cero.</p>
+  <button onclick="limpiarTodo()">🗑 Borrar todo y reiniciar</button>
+  <button class="secondary" onclick="location.href='index.html'">⬅️ Volver a la app</button>
+  <div id="msg"></div>
+</div>
+<script>
+async function limpiarTodo() {
+  try {
+    localStorage.clear();
+    sessionStorage.clear();
+    const regs = await navigator.serviceWorker.getRegistrations();
+    for (const reg of regs) { await reg.unregister(); }
+    document.getElementById('msg').innerHTML = '<div class="ok">✅ Todo limpiado. Toca "Volver a la app" abajo.</div>';
+  } catch(e) {
+    document.getElementById('msg').innerHTML = '<div class="ok">⚠️ ' + e.message + '</div>';
+  }
+}
+</script>
+</body>
+</html>

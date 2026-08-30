@@ -1,22 +1,23 @@
-const CACHE_NAME = 'mi-agenda-v1';
-const urlsToCache = [
-  '/mi-agenda/',
-  '/mi-agenda/index.html',
-  '/mi-agenda/styles.css',
-  '/mi-agenda/app.js',
-  '/mi-agenda/manifest.json'
-];
+const CACHE_NAME = 'mi-agenda-v2';
 
 self.addEventListener('install', e => {
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', e => {
   e.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
+    caches.keys().then(cacheNames => {
+      return Promise.all(
+        cacheNames.map(cacheName => {
+          if (cacheName !== CACHE_NAME) {
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    }).then(() => self.clients.claim())
   );
 });
 
 self.addEventListener('fetch', e => {
-  e.respondWith(
-    caches.match(e.request).then(response => {
-      return response || fetch(e.request);
-    })
-  );
+  e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
 });
